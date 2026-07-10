@@ -17,6 +17,10 @@ The project uses two main datasets:
 - data/instruction_dataset.jsonl: instruction-response pairs used for supervised fine-tuning
 - data/preference_dataset.jsonl: chosen/rejected response pairs used for DPO alignment
 
+Dataset sample counts discovered in the data folder:
+- instruction_dataset.jsonl: 104 samples
+- preference_dataset.jsonl: 50 samples
+
 The data contains questions such as:
 - drug name
 - parties to the agreement
@@ -48,6 +52,15 @@ Approach:
 - train the model to answer questions directly
 - teach response structure and factual grounding for contract-related questions
 
+Data format used for instruction fine-tuning:
+```json
+{
+  "instruction": "What is the Drug that is the subject of the Antares–AMAG Manufacturing Agreement?",
+  "input": "",
+  "response": "The Drug is 17-alpha hydroxyprogesterone caproate."
+}
+```
+
 ## 8. DPO Alignment Approach
 The DPO stage aligns the model using preference pairs.
 
@@ -55,6 +68,15 @@ Approach:
 - compare a preferred answer vs. a rejected answer
 - train the model to prefer more accurate and higher-quality responses
 - sharpen the behavior of the already instruction-tuned model
+
+Data format used for DPO alignment:
+```json
+{
+  "prompt": "What is the Effective Date of the Manufacturing Agreement?",
+  "chosen": "The Effective Date is March 20, 2018.",
+  "rejected": "The Effective Date is September 30, 2014, the same date as the underlying Development and License Agreement."
+}
+```
 
 ## 9. LoRA / QLoRA Configuration
 The notebooks use LoRA-based fine-tuning with 4-bit quantization.
@@ -116,6 +138,9 @@ Key observations:
 
 Overall conclusion:
 The fine-tuned assistant is significantly better than the base model, especially for the targeted contract domain, but factual accuracy for rare or underrepresented details remains a data challenge rather than a purely training-algorithm challenge.
+
+## 13. Future Improvements
+The model reliably recalls facts appearing 8+ times in the training data but confidently fabricates those appearing 1–6 times. The next step is to enrich the remaining key facts — Effective Date (1 occurrence), Return/Recall Policy (3), Transfer Price (5), and Quality Agreement (6) — to 6–8 varied phrasings each, applying the same intervention already validated on the drug name, which flipped from fabrication to reliable recall after enrichment from 2 to 8 occurrences.
 
 ## Repository Structure
 
