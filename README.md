@@ -17,7 +17,7 @@ The project uses two main datasets:
 - data/instruction_dataset.jsonl: instruction-response pairs used for supervised fine-tuning
 - data/preference_dataset.jsonl: chosen/rejected response pairs used for DPO alignment
 
-Dataset sample counts discovered in the data folder:
+Dataset sample counts (from data/):
 - instruction_dataset.jsonl: 104 samples
 - preference_dataset.jsonl: 50 samples
 
@@ -29,9 +29,8 @@ The data contains questions such as:
 - delivery and recall terms
 - transfer price and minimum order requirements
 
-Reference dataset:
-- Referred to the Hugging Face dataset from the CUAD contract corpus for domain context and structure:
-  https://huggingface.co/datasets/theatticusproject/cuad/tree/main/CUAD_v1/full_contract_txt/Part_I
+Reference dataset and synthetic data:
+- Referred to the Hugging Face CUAD contract corpus for domain context and structure: [CUAD Part I](https://huggingface.co/datasets/theatticusproject/cuad/tree/main/CUAD_v1/full_contract_txt/Part_I)
 - Created synthetic training data using Claude to expand the instruction and preference datasets for fine-tuning.
 
 ## 5. Base Model Used
@@ -49,6 +48,8 @@ Approach:
 
 This stage helps the model better understand the target domain before it learns to answer questions.
 
+**Stage 1 — Continued Pretraining (CPT).** 25 packed chunks from the Antares–AMAG contract, 100 steps at LR 2e-4, `packing=True`. This teaches the model to *continue text* in the contract's domain and style. Loss descended 2.02 → 0.88; `lora_B` reached 0.0204, confirming the adapter genuinely learned. CPT does **not** teach instruction-following — tested with a question, this model still rambles, which is correct behavior.
+
 ## 7. Instruction Fine-tuning Approach
 The instruction fine-tuning stage uses supervised fine-tuning (SFT) on instruction-response data.
 
@@ -57,7 +58,15 @@ Approach:
 - train the model to answer questions directly
 - teach response structure and factual grounding for contract-related questions
 
-Data format used for instruction fine-tuning:
+**Stage 2 — Supervised Fine-Tuning (SFT).** 104 Alpaca-format instruction/response pairs, 150 steps at LR 2e-4, `packing=False`. Three implementation details were essential:
+
+- **Prompt template** applied identically at training and inference, including the trailing newline after `### Response:`
+- **EOS token** appended to each response, or the model never learns where to stop
+- **Response-only masking** — prompt tokens set to `-100` so loss is computed only on the answer, implemented via deterministic offset masking rather than token-pattern search
+
+Loss descended 1.84 → 0.0018.
+
+**Data format (Instruction SFT):**
 ```json
 {
   "instruction": "What is the Drug that is the subject of the Antares–AMAG Manufacturing Agreement?",
@@ -74,7 +83,11 @@ Approach:
 - train the model to prefer more accurate and higher-quality responses
 - sharpen the behavior of the already instruction-tuned model
 
-Data format used for DPO alignment:
+**Stage 3 — Direct Preference Optimization (DPO).** 50 `(prompt, chosen, rejected)` triples, 15 steps at LR 5e-5, beta 0.1, loading the Stage 2 merged model with `ref_model=None` (the frozen base acts as implicit reference under LoRA).
+
+Each stage's adapter was merged into the base weights before the next stage loaded it.
+
+**Data format (DPO Alignment):**
 ```json
 {
   "prompt": "What is the Effective Date of the Manufacturing Agreement?",
