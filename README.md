@@ -29,6 +29,11 @@ The data contains questions such as:
 - delivery and recall terms
 - transfer price and minimum order requirements
 
+Reference dataset:
+- Referred to the Hugging Face dataset from the CUAD contract corpus for domain context and structure:
+  https://huggingface.co/datasets/theatticusproject/cuad/tree/main/CUAD_v1/full_contract_txt/Part_I
+- Created synthetic training data using Claude to expand the instruction and preference datasets for fine-tuning.
+
 ## 5. Base Model Used
 Base model: unsloth/tinyllama-bnb-4bit
 
