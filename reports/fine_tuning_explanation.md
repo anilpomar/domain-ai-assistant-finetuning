@@ -1,8 +1,7 @@
-# Fine-Tuning Explained
-
-A conceptual walkthrough of the three-stage pipeline, why each stage exists, and what the experiments actually demonstrated.
-
----
+# Why full fine-tuning is expensive
+Full Fine-Tuning needs training which updates weights on each parameters of a model.
+    Ex : unsloth/tinyllama-bnb-4bit which has 1.1 billion parameters
+     In a full fine-tuning run, every single one of the 1.1 billion parameters has its weights updated during training
 
 ## What "learning a fact" means inside a model
 
@@ -18,10 +17,25 @@ Everything that follows is a consequence of this one idea.
 
 ---
 
+## Values Used for Fine-Tuning
+
+- LoRA rank: 16
+- LoRA alpha: 32
+- LoRA dropout: 0
+- BATCH_SIZE = 2`
+- STAGE1_LR = 5e-5`       # Non-Instruction Learning Rate
+- STAGE2_LR = 2e-4`       # Instruction Learning Rate
+- STAGE3_LR = 5e-5`       # Preference Learning Rate
+
+# Fine-Tuning Explained
+
+A conceptual walkthrough of the three-stage pipeline, why each stage exists, and what the experiments actually demonstrated.
+
+---
 ## The Three Stages
 
 ### Stage 1 — Continued Pretraining (CPT)
-**Objective:** predict the next token in raw domain text.
+**Objective:**  Trains Domain Knowledge to Pretrained Model.
 **Data:** 25 packed chunks from the Antares–AMAG contract.
 **Teaches:** domain *style* and vocabulary.
 **Does not teach:** instruction-following.
@@ -29,7 +43,7 @@ Everything that follows is a consequence of this one idea.
 CPT trains the model to *continue* text in a domain. Tested with a question, a CPT-only model will still ramble — this is correct behavior, not failure. Its value appears in the loss on contract text (2.02 → 0.88), not in Q&A.
 
 ### Stage 2 — Supervised Fine-Tuning (SFT)
-**Objective:** given an instruction, produce the correct response.
+**Objective:** Trains Model on top of Domain to respond to question asked.Given an instruction, produce the correct response.
 **Data:** 104 Alpaca-format instruction/response pairs.
 **Teaches:** instruction-following, plus recall of well-represented facts.
 
@@ -54,7 +68,7 @@ for i in range(n_prompt):
 ```
 
 ### Stage 3 — Direct Preference Optimization (DPO)
-**Objective:** given a prompt and two candidate answers, prefer the better one.
+**Objective:** Model Gets trained to opt Positive answers on Negative. Given a prompt and two candidate answers, prefer the better one.
 **Data:** 50 `(prompt, chosen, rejected)` triples.
 **Teaches:** preference between things the model can already represent.
 
@@ -176,6 +190,7 @@ step 26-40:  grad_norm = 0.0014   ← survived, 1000× too small
 bf16 is a property of the **GPU**, not the model. The T4 (Turing, compute 7.5) predates bf16 tensor cores; the L4 (Ada, 8.9) has them. Note that `unsloth/tinyllama-**bnb-4bit**` refers to how *frozen base weights are stored*, which is entirely independent of what precision the *training computation* runs in.
 
 ---
+
 
 ## Summary of Lessons
 
