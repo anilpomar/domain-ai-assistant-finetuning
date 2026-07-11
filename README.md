@@ -1,4 +1,4 @@
-# Domain AI Assistant Fine-tuning
+#  Legal Document FAQ AI Assistant
 
 ## 1. Project Title
 Domain AI Assistant Fine-tuning
