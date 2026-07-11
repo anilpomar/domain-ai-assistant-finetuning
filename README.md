@@ -221,5 +221,25 @@ If needed, set a Hugging Face token:
 export HF_TOKEN=hf_your_token
 ```
 
+## Output
+
+Below is a short sample run of the inference script. See the implementation in [src/inference.py](src/inference.py#L1-L74).
+
+```
+Ready.
+
+Q1: What is the Drug that is the subject of the Antares-AMAG Manufacturing Agreement?
+A1: It is 17-alpha hydroxyprogesterone caproate.
+--------------------------------------------------------------------------------
+Q2: Who are the parties to the Manufacturing Agreement?
+A2: They are Antares and AMAG, respectively.
+--------------------------------------------------------------------------------
+Q3: State the Effective Date of the Manufacturing Agreement.
+A3: It becomes an agreement effectiveness date ahead of the parties both becoming parties to it.
+--------------------------------------------------------------------------------
+```
+
 ## Summary
+ 
+![Inference run screenshot](reports/images/inference-run.png)
 This project demonstrates how a small language model can be adapted into a practical domain assistant for contract understanding using a staged workflow: domain adaptation, instruction tuning, and preference alignment.
