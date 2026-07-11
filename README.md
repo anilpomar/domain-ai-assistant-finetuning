@@ -157,7 +157,43 @@ Key observations:
 Overall conclusion:
 The fine-tuned assistant is significantly better than the base model, especially for the targeted contract domain, but factual accuracy for rare or underrepresented details remains a data challenge rather than a purely training-algorithm challenge.
 
-## 13. Future Improvements
+## 13. Challenges faced
+
+1. **Silent Training failure fp16 gradient collapse** → Early training runs produced a loss curve that descended plausibly (2.29 → 1.82) while the model learned nothing. Merged models were behaviourally identical to the untrained base model.Migrate to bf16-capable GPU (L4) 
+### Resolution
+Migrated to an L4 GPU (Ada architecture, native bf16). bf16 has fp32's full dynamic range in 16 bits — no overflow, no GradScaler, no crushed gradients. Gradient norms rose to a healthy 0.35–0.65 and lora_B reached 0.0204
+
+2. **Version drift** → A working notebook broke with no code change.The new Transformers was incompatible with the installed Unsloth build. 
+### Resolution
+Reinstalled the stack in a fresh session. Pinned dependency versions at the top of the notebook so Colab cannot move the foundation underneath the code.
+
+3. **Tokenizer boundary masking** →Used train_on_responses_only which searches for the token-ID subsequence of the marker, not the string.  SentencePiece merges the trailing newline with the first character of the following word, so the marker's standalone tokens never appear as a contiguous run inthe tokenized sequence. Removing the newline from the marker did not help either
+### Resolution
+Moved to Deterministic offset-based masking by locate the marker by string position
+
+4. **Diluted gradient from masking** → At STAGE2_LR = 2e-5 , Stage 2's lora_B reached only 0.0017 after 150 steps — against 0.0204 for Stage 1 at just 100 steps. Response-only masking sets prompt tokens to -100 , so only the response (roughly 10–20% of each sequence) contributes to the loss
+### Resolution
+Raise Stage 2 LR from 2e-5 to 2e-4.  A masked SFT stage needs a higher learning rate than an unmasked CPT stage running the same number of steps
+
+5. **"Broken" vs "not finished"** → After migrating to the L4, lora_B still read 0.0008. The run was only 15 steps. lora_B starts at exactly zero and cannot grow meaningfully. Checked gradient norms first. 
+### Resolution
+Extending Stage 1 to 100 steps grew lora_B to 0.0204 
+
+6. **Fact hallucination** → Once training genuinely worked, the model still fabricated the drug name —producing a different invented compound on each run ( NBI-495 → NBI-4157 → NBI-49544 ). Increasing steps from 60 to 160 made the prose more fluent but the facts no less wrong. 
+### Resolution
+Enriched the fact to 8 occurrences across varied question phrasings
+
+7. **Misleading evaluation from sampling** → Same question produced three different invented drug names across runs because of Inference used do_sample=True with temperature=0.7 injecting randomness.
+### Resolution
+Switched all factual evaluation to greedy decoding ( do_sample=False ), which is deterministic and returns the model's single most-confident answer.
+
+8. **DPO over-optimization** → An initial 60-step DPO run appeared successful by the headline metric —rewards/margins grew to +13.8.  Reduced to 15 steps. rewards/chosen stayed positive (+1.14) and  and margins reached a healthy +4.64. Watch rewards/chosen , not just margins. Margins can grow while both sides get worse.
+
+9. **DPO cannot teach facts** → Fix upstream in SFT data coverage (1 of 104 SFT examples had date sample so The aligned model still could not produce the date.)
+### Resolution
+Will be fixed for future improvement.
+
+## 14. Future Improvements
 The model reliably recalls facts appearing 8+ times in the training data but confidently fabricates those appearing 1–6 times. The next step is to enrich the remaining key facts — Effective Date (1 occurrence), Return/Recall Policy (3), Transfer Price (5), and Quality Agreement (6) — to 6–8 varied phrasings each, applying the same intervention already validated on the drug name, which flipped from fabrication to reliable recall after enrichment from 2 to 8 occurrences.
 
 ## Repository Structure
