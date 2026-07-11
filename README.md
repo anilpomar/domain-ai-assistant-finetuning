@@ -194,7 +194,9 @@ Switched all factual evaluation to greedy decoding ( do_sample=False ), which is
 Will be fixed for future improvement.
 
 ## 14. Future Improvements
-The model reliably recalls facts appearing 8+ times in the training data but confidently fabricates those appearing 1–6 times. The next step is to enrich the remaining key facts — Effective Date (1 occurrence), Return/Recall Policy (3), Transfer Price (5), and Quality Agreement (6) — to 6–8 varied phrasings each, applying the same intervention already validated on the drug name, which flipped from fabrication to reliable recall after enrichment from 2 to 8 occurrences.
+- The model reliably recalls facts appearing 8+ times in the training data but confidently fabricates those appearing 1–6 times. The next step is to enrich the remaining key facts — Effective Date (1 occurrence), Return/Recall Policy (3), Transfer Price (5), and Quality Agreement (6) — to 6–8 varied phrasings each, applying the same intervention already validated on the drug name, which flipped from fabrication to reliable recall after enrichment from 2 to 8 occurrences.
+
+- Design a website that helps user to interact
 
 ## Repository Structure
 
