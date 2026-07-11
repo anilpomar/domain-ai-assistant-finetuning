@@ -1,8 +1,11 @@
 # Why full fine-tuning is expensive
 Full Fine-Tuning needs training which updates weights on each parameters of a model.
     Ex : unsloth/tinyllama-bnb-4bit which has 1.1 billion parameters
-     In a full fine-tuning run, every single one of the 1.1 billion parameters has its weights updated during training
+     In a full fine-tuning run, every single one of the 1.1 billion parameters has its weights updated during training.
 
+**Reasons.**    
+**High VRAM Cost**-It requires significantly more hardware memory than PEFT (Parameter-Efficient Fine-Tuning)
+**Optimizer State Overhead**-The optimizer must track gradients for all 1.1 billion parameters.
 ## What "learning a fact" means inside a model
 
 Fine-tuning does not store facts in a lookup table. It adjusts weights so that, given some input tokens, the probability of the correct next token increases.
