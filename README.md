@@ -38,6 +38,13 @@ Base model: unsloth/tinyllama-bnb-4bit
 
 This is a compact TinyLlama-based model adapted for efficient fine-tuning using 4-bit quantization.
 
+| Parameter | Value |
+|---|---|
+| Model | `unsloth/tinyllama-bnb-4bit` |
+| Architecture | LLaMA (TinyLlama variant) |
+| Total parameters | **1,112,664,064** (~1.1B) |
+| Quantization | NF4 (NormalFloat 4-bit via bitsandbytes) |
+
 ### Three-Stage Pipeline Overview
 
 The pipeline has three stages, each adding a distinct capability:
