@@ -38,6 +38,16 @@ Base model: unsloth/tinyllama-bnb-4bit
 
 This is a compact TinyLlama-based model adapted for efficient fine-tuning using 4-bit quantization.
 
+### Three-Stage Pipeline Overview
+
+The pipeline has three stages, each adding a distinct capability:
+
+| Stage | What it teaches | Data | Steps |
+|---|---|---|---|
+| CPT (continued pretraining) | Domain vocabulary and style | 25 contract chunks | 100 |
+| SFT (supervised fine-tuning) | Instruction following + facts | 104 Q&A pairs | 150 |
+| DPO (preference alignment) | Prefer correct over plausible | 50 preference pairs | 15 |
+
 ## 6. Non-instruction Fine-tuning Approach
 The non-instruction fine-tuning stage is a continued pretraining-style adaptation on domain text.
 
@@ -139,6 +149,33 @@ It also failed on other contract questions, such as the parties, by responding w
 After instruction tuning, the model became much better at answering directly and using contract-specific vocabulary. The SFT model correctly answered the drug question with the real drug name: 17-alpha hydroxyprogesterone caproate.
 
 The DPO model preserved this fact but showed mixed behavior on other questions. It maintained the corrected drug answer, yet on some other questions it became more verbose and introduced invented details, which suggests DPO sharpened preference but did not fully solve rare factual recall.
+
+### Accuracy Scorecard — Stage by Stage
+
+| Metric | Base | After CPT | After SFT | After DPO |
+|---|---|---|---|---|
+| Answers the question | 0/10 | 0/10 | **10/10** | 10/10 |
+| Stops cleanly | 3/10 | 3/10 | **10/10** | 10/10 |
+| Contract vocabulary | 0/10 | Partial | **10/10** | 10/10 |
+| **Factually correct** | **0/10** | **0/10** | **2/10** | **1/10** |
+| Coherent | 8/10 | 8/10 | 9/10 | **5/10** |
+
+SFT delivered the transformation — 0/10 → 10/10 on instruction-following. Factual accuracy reached 2/10, with the two correct facts being the two with the highest training frequency. DPO preserved the enriched fact but degraded both factual accuracy (2/10 → 1/10) and coherence (9/10 → 5/10).
+
+### Why facts fail — the frequency relationship
+
+| Fact | Training occurrences | Correct? |
+|---|---|---|
+| Parties (Antares / AMAG) | 55 / 57 | ✓ |
+| Drug name (enriched) | **8** | ✓ |
+| Quality Agreement | 6 | ✗ |
+| Transfer Price | 5 | ✗ |
+| Return / Recall | 3 | ✗ |
+| Effective Date | **1** | ✗ |
+
+The relationship is monotonic. The drug name was originally at 2 occurrences and the model invented a different fake name on every run (NBI-495 → NBI-4157 → NBI-49544). After enrichment to 8 varied phrasings, it became reliably correct. Every other fact left at its original frequency still fails.
+
+**Fact frequency in the training data — not training duration — determines whether the model learns it.**
 
 ### Summary of comparison
 - Base model: fluent, confident, but fabricated
